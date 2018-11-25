@@ -1,0 +1,116 @@
+import requests
+
+
+def request_api(link, head, parameters):
+    if head == '':
+        r = requests.get(url=link, params=parameters)
+    else:
+        r = requests.get(url=link, headers=head, params=parameters)
+    data = r.json()
+    return data
+
+
+def read_data(filename):
+    frame = {}
+    with open(filename, 'r') as f:
+        for line in f:
+            parts = line.split(',')
+            line_nr = parts[0]
+            station_name = parts[1]
+            station_changes = parts[3].split('+')
+            entry = line_nr, station_changes
+            frame[station_name] = entry
+    return frame
+
+
+def y_translate(st):
+    parameters = {
+        'key': YANDEX_TRANSLATE_KEY,
+        'text': st,
+        'lang': 'ru-en',
+    }
+
+    data = request_api('https://translate.yandex.net/api/v1.5/tr.json/translate', '', parameters)
+
+    translation = data['text'][0]
+    disclaimer = 'Powered by Yandex.Translate: http://translate.yandex.com'
+
+    return translation, disclaimer
+
+
+def moscow_events():
+    headers = {
+        "Authorization": MOSCOW_EVENTS_AUTH,
+        "Accept": "application/json"
+    }
+
+    parameters = {
+        # 'country': 'RU',
+        'start.gte': '2018-11-25',
+        'sort': 'start',
+        # 'location': [55.75, 37.61],
+        'place.scope': 524925
+    }
+
+    data = request_api("https://api.predicthq.com/v1/events", headers, parameters)
+
+    # print(data)
+    event_list = []
+    for event in data['results']:
+        title = event['title']
+        day = event['start'][:10]
+        time = event['start'][11:16]
+        labels = event['labels']
+        temp = [title, day, time, labels]
+        event_list.append(temp)
+        #print('Title: {}, day: {}, time: {}'.format(title, day, time))
+    return event_list
+
+
+def nearest_metro(geocode, radius):
+    parameters = {
+        "key": GOOGLE_API_KEY,
+        "location": geocode,
+        "type": 'subway_station',
+        # "rankby": 'distance',
+        "radius": radius
+    }
+
+    data = request_api('https://maps.googleapis.com/maps/api/place/nearbysearch/json', '', parameters)
+    list_stations = []
+    for stations in data['results']:
+        name = stations['name'].replace("'", "")
+        list_stations.append(name)
+
+    db = read_data('list_moscow_metro_stations.csv')
+
+    complete_list = []
+    for element in list_stations:
+        info = db[element]
+        entry = element, info
+        complete_list.append(entry)
+
+    return complete_list
+
+menu = int(input("Please choose from the following:\n"
+                 " 1 - Translator RU-EN\n"
+                 " 2 - Events in Moscow\n"
+                 " 3 - Nearest metro\n"
+                 "Your choice: "))
+
+if menu == 1:
+    user_input = input("Enter the text you want to translate: ")
+
+    translation, disclaimer = y_translate(user_input)
+    print(translation)
+    print(disclaimer)
+
+if menu == 2:
+    events = moscow_events()
+    print(events)
+
+if menu == 3:
+    ui_geo = input("Geocode: ")
+    ui_rad = int(input("Radius: "))
+    metro = nearest_metro(ui_geo, ui_rad)
+    print(metro)
