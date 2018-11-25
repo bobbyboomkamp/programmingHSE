@@ -23,7 +23,20 @@ def read_data(filename):
     return frame
 
 
-def y_translate(st):
+def y_translate(st, dir):
+    if dir == 1:
+        parameters = {
+            'key': 'trnsl.1.1.20181124T141843Z.3e22038cf1d5d529.30a79e408a656c04c5b6f4d9936497494fbbd380',
+            'text': st,
+            'lang': 'ru-en',
+        }
+    if dir == 2:
+        parameters = {
+            'key': 'trnsl.1.1.20181124T141843Z.3e22038cf1d5d529.30a79e408a656c04c5b6f4d9936497494fbbd380',
+            'text': st,
+            'lang': 'en-ru',
+        }
+        
     parameters = {
         'key': YANDEX_TRANSLATE_KEY,
         'text': st,
@@ -93,15 +106,19 @@ def nearest_metro(geocode, radius):
     return complete_list
 
 menu = int(input("Please choose from the following:\n"
-                 " 1 - Translator RU-EN\n"
+                 " 1 - Translator\n"
                  " 2 - Events in Moscow\n"
                  " 3 - Nearest metro\n"
                  "Your choice: "))
-
+                 
 if menu == 1:
+    direction = int(input("Do you want to:\n"
+                          " 1 - RU-EN\n"
+                          " 2 - EN-RU\n"
+                          "Your choice: "))
     user_input = input("Enter the text you want to translate: ")
 
-    translation, disclaimer = y_translate(user_input)
+    translation, disclaimer = y_translate(user_input, direction)
     print(translation)
     print(disclaimer)
 
